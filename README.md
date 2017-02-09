@@ -2,6 +2,7 @@
 
 clone and then run
 ```
+npm install
 npm start
 ```
 then go here to try
