@@ -1,5 +1,10 @@
 # lti-first
-go here to try
+
+clone and then run
+```
+npm start
+```
+then go here to try
 
 https://byui.brightspace.com/d2l/le/content/10011/Home?itemIdentifier=D2L.LE.Content.ContentObject.ModuleCO-3478491
 
