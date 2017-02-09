@@ -10,9 +10,15 @@ var lti = require('ims-lti');
 var ltiContent = require('./node_modules/ims-lti/lib/extensions/content.js');
 var provider = new lti.Provider("my_cool_key", "my_cool_secret");
 var chalk = require('chalk');
-
+var Learnosity = require('learnosity-sdk-nodejs');
+var html = fs.readFileSync("./index.html", "utf8");
+var creds = fs.readFileSync("../dev.json", "utf8");
 var qs = require('querystring');
 
+function writeLog(data) {
+    fs.appendFile("data.log", data, function () {});
+    console.log(data);
+}
 
 function getPort() {
     return 8080;
@@ -24,14 +30,43 @@ function getScript(port) {
 }
 
 function sendHTMLBack(res) {
-    var reader = fs.createReadStream("./index.html");
-    reader.pipe(res);
 
-    reader.on("error", function () {
-        res.writeHead(404);
-        res.write("404");
-        res.end();
-    });
+
+    // Instantiate the SDK
+    var learnositySdk = new Learnosity();
+
+    var request = learnositySdk.init(
+        'questions', {
+            'consumer_key': creds.key,
+            'domain': 'localhost',
+            'user_id': 'finchd@byui.edu'
+        },
+        creds.secret, {
+            'type': 'local_practice',
+            'state': 'initial',
+            'questions': [
+                {
+                    'response_id': '60005',
+                    'type': 'association',
+                    'stimulus': 'Match the cities to the parent nation.',
+                    'stimulus_list': ['London', 'Dublin', 'Paris', 'Sydney'],
+                    'possible_responses': ['Australia', 'France', 'Ireland', 'England'],
+                    'validation': {
+                        'valid_responses': [
+                            ["England"],["Ireland"],["France"],["Australia"]
+                        ],
+                    }
+            }
+            ]
+        }
+    );
+
+    res.end(html.replace(/{{request}}/, JSON.stringify(request, null, 4)));
+//    html.on("error", function () {
+//        res.writeHead(404);
+//        res.write("404");
+//        res.end();
+//    });
 
 }
 
@@ -53,9 +88,9 @@ function processRequest(request, response) {
 
             provider.valid_request(request, body, function (err, isValid) {
                 ltiContent.init(provider);
-                console.log("provider:", provider);
-                //console.log("request:", request);
-                //console.log("response:", response);
+                writeLog("provider:" + JSON.stringify(provider, null, 4));
+                //                console.log("request:", request);
+                //                console.log("response:", response);
 
                 if (err || !isValid) {
                     console.log(chalk.red("Not valid LTI"));
@@ -66,6 +101,7 @@ function processRequest(request, response) {
 
                 console.log(chalk.yellow(("provider.ext_content:" + provider.ext_content.toString())));
                 sendHTMLBack(response);
+
             });
 
         });
