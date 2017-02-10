@@ -36,14 +36,21 @@ function writeLog() {
     console.log(...arguments);
 }
 
+function makeRequestHtml(request, apiScriptName) {
+    return requestHtml
+        //add in the request JSON
+        .replace(/{{request}}/, JSON.stringify(request, null, 4))
+        //add in the apiScriptName
+        .replace(/{{apiScriptName}}/, apiScriptName);
+}
+
 function sendHTMLBack(res) {
-
-
     // Instantiate the SDK
     var learnositySdk = new Learnosity();
+    var apiScriptName = 'items';
 
     var request = learnositySdk.init(
-        'items', {
+        apiScriptName, {
             'consumer_key': creds.key,
             'domain': 'localhost',
             'user_id': 'finchd@byui.edu'
@@ -67,7 +74,7 @@ function sendHTMLBack(res) {
         }
     );
 
-    res.end(html.replace(/{{request}}/, JSON.stringify(request, null, 4)));
+    res.end(makeRequestHtml(request, apiScriptName));
 }
 
 function processRequest(request, response) {
@@ -83,13 +90,11 @@ function processRequest(request, response) {
 
         request.on('end', function () {
             var body = qs.parse(bodyString)
-                //console.log("body from qs:", body);
-
+                
             provider.valid_request(request, body, function (err, isValid) {
                 writeLog("provider:", provider);
-                //                console.log("request:", request);
-                //                console.log("response:", response);
-
+                
+                //check if the lti is valid
                 if (err || !isValid) {
                     console.log(chalk.red("Not valid LTI"));
                     return;
@@ -97,7 +102,6 @@ function processRequest(request, response) {
 
                 console.log(chalk.green("Yay! Valid LTI"));
 
-                console.log(chalk.yellow(("provider.ext_content:" + provider.ext_content.toString())));
                 sendHTMLBack(response, provider);
 
             });
