@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /* eslint-env node*/
 /* eslint no-console:0*/
 
@@ -15,7 +13,7 @@ var fs = require("fs"),
         key: fs.readFileSync(__dirname + "/keys/server.key"),
         cert: fs.readFileSync(__dirname + "/keys/server.crt")
     },
-    requestHtml = fs.readFileSync("./request.html", "utf8"),
+    htmlFiles = require('./htmlFilesToObject.js')(),
     creds = JSON.parse(fs.readFileSync("../dev.json", "utf8")),
     provider = new lti.Provider("my_cool_key", "my_cool_secret");
 
@@ -37,14 +35,14 @@ function writeLog() {
 }
 
 function makeRequestHtml(request, apiScriptName) {
-    return requestHtml
+    return htmlFiles.request
         //add in the request JSON
         .replace(/{{request}}/, JSON.stringify(request, null, 4))
         //add in the apiScriptName
         .replace(/{{apiScriptName}}/, apiScriptName);
 }
 
-function sendHTMLBack(res) {
+function sendLearnosityBack(res) {
     // Instantiate the SDK
     var learnositySdk = new Learnosity();
     var apiScriptName = 'items';
@@ -78,7 +76,7 @@ function sendHTMLBack(res) {
 }
 
 function processRequest(request, response) {
-    if (request.method == 'POST') {
+    if (request.method === 'POST') {
         var bodyString = '';
 
         request.on('data', function (data) {
@@ -97,16 +95,20 @@ function processRequest(request, response) {
                 //check if the lti is valid
                 if (err || !isValid) {
                     console.log(chalk.red("Not valid LTI"));
+                    response.end(htmlFiles.badLtiLaunch);
                     return;
                 }
 
                 console.log(chalk.green("Yay! Valid LTI"));
 
-                sendHTMLBack(response, provider);
+                sendLearnosityBack(response, provider);
 
             });
 
         });
+    } else {
+        //no post
+        response.end(htmlFiles.badLtiLaunch);
     }
 }
 
