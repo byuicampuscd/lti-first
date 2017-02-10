@@ -12,9 +12,8 @@ var provider = new lti.Provider("my_cool_key", "my_cool_secret");
 var chalk = require('chalk');
 var Learnosity = require('learnosity-sdk-nodejs');
 var html = fs.readFileSync("./index.html", "utf8");
-var creds = fs.readFileSync("../dev.json", "utf8");
+var creds = JSON.parse(fs.readFileSync("../dev.json", "utf8"));
 var qs = require('querystring');
-
 function writeLog(data) {
     fs.appendFile("data.log", data, function () {});
     console.log(data);
@@ -36,7 +35,7 @@ function sendHTMLBack(res) {
     var learnositySdk = new Learnosity();
 
     var request = learnositySdk.init(
-        'questions', {
+        'items', {
             'consumer_key': creds.key,
             'domain': 'localhost',
             'user_id': 'finchd@byui.edu'
@@ -44,20 +43,19 @@ function sendHTMLBack(res) {
         creds.secret, {
             'type': 'local_practice',
             'state': 'initial',
-            'questions': [
-                {
-                    'response_id': '60005',
-                    'type': 'association',
-                    'stimulus': 'Match the cities to the parent nation.',
-                    'stimulus_list': ['London', 'Dublin', 'Paris', 'Sydney'],
-                    'possible_responses': ['Australia', 'France', 'Ireland', 'England'],
-                    'validation': {
-                        'valid_responses': [
-                            ["England"],["Ireland"],["France"],["Australia"]
-                        ],
-                    }
+            "rendering_type": "assess",
+            "user_id": "finchd@byui.edu",
+            "session_id": Object.keys(provider.nonceStore.used)[0],
+            "items": [
+             "4a54ff38-1d69-4a92-80b5-a12b33bf406c"
+            ],
+            "config": {
+                 "subtitle": "By Ben (H)",
+                 "navigation": {
+                     "show_intro": true,
+                     "show_itemcount": true
+                 }
             }
-            ]
         }
     );
 
@@ -100,7 +98,7 @@ function processRequest(request, response) {
                 console.log(chalk.green("Yay! Valid LTI"));
 
                 console.log(chalk.yellow(("provider.ext_content:" + provider.ext_content.toString())));
-                sendHTMLBack(response);
+                sendHTMLBack(response, provider);
 
             });
 
