@@ -34,6 +34,11 @@ function writeLog() {
     console.log(...arguments);
 }
 
+function makeErrorHtml(message) {
+    return htmlFiles.error
+        .replace(/{{message}}/g, message);
+}
+
 function makeRequestHtml(request, apiScriptName) {
     return htmlFiles.request
         //add in the request JSON
@@ -94,8 +99,8 @@ function processRequest(request, response) {
 
                 //check if the lti is valid
                 if (err || !isValid) {
-                    console.log(chalk.red("Not valid LTI"));
-                    response.end(htmlFiles.badLtiLaunch);
+                    console.log(chalk.red("Invalid LTI Launch"));
+                    response.end(makeErrorHtml("Invalid LTI Launch"));
                     return;
                 }
 
@@ -108,7 +113,7 @@ function processRequest(request, response) {
         });
     } else {
         //no post
-        response.end(htmlFiles.badLtiLaunch);
+        response.end(makeErrorHtml("Did not send Post for LTI Launch"));
     }
 }
 
