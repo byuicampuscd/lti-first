@@ -3,29 +3,37 @@
 /* eslint-env node*/
 /* eslint no-console:0*/
 
-var fs = require("fs");
-var https = require("https");
-var port = getPort();
-var lti = require('ims-lti');
-var ltiContent = require('./node_modules/ims-lti/lib/extensions/content.js');
-var provider = new lti.Provider("my_cool_key", "my_cool_secret");
-var chalk = require('chalk');
-var Learnosity = require('learnosity-sdk-nodejs');
-var html = fs.readFileSync("./index.html", "utf8");
-var creds = JSON.parse(fs.readFileSync("../dev.json", "utf8"));
-var qs = require('querystring');
-function writeLog(data) {
-    fs.appendFile("data.log", data, function () {});
-    console.log(data);
-}
+var fs = require("fs"),
+    https = require("https"),
+    lti = require('ims-lti'),
+    qs = require('querystring'),
+    chalk = require('chalk'),
+    Learnosity = require('learnosity-sdk-nodejs'),
+    port = 8080,
+    url = 'https://localhost:' + port,
+    options = {
+        key: fs.readFileSync(__dirname + "/keys/server.key"),
+        cert: fs.readFileSync(__dirname + "/keys/server.crt")
+    },
+    requestHtml = fs.readFileSync("./index.html", "utf8"),
+    creds = JSON.parse(fs.readFileSync("../dev.json", "utf8")),
+    provider = new lti.Provider("my_cool_key", "my_cool_secret");
 
-function getPort() {
-    return 8080;
-}
 
-function getScript(port) {
-    var url = 'https://localhost:' + port + '/path-2-file';
-    return '<script src="' + url + '"></script>';
+/*
+    helper function to make a console.log() also write to data.log
+*/
+function writeLog() {
+    var argString = Array.from(arguments).map(function (arg) {
+        if (typeof arg === "object") {
+            return JSON.stringify(arg, null, 2);
+        }
+        return arg.toString();
+    }).join(' ');
+    argString += "\n------------------------------------------\n"
+
+    fs.appendFile("data.log", argString, function () {});
+    console.log(...arguments);
 }
 
 function sendHTMLBack(res) {
@@ -50,22 +58,16 @@ function sendHTMLBack(res) {
              "4a54ff38-1d69-4a92-80b5-a12b33bf406c"
             ],
             "config": {
-                 "subtitle": "By Ben (H)",
-                 "navigation": {
-                     "show_intro": true,
-                     "show_itemcount": true
-                 }
+                "subtitle": "By Ben (H)",
+                "navigation": {
+                    "show_intro": true,
+                    "show_itemcount": true
+                }
             }
         }
     );
 
     res.end(html.replace(/{{request}}/, JSON.stringify(request, null, 4)));
-//    html.on("error", function () {
-//        res.writeHead(404);
-//        res.write("404");
-//        res.end();
-//    });
-
 }
 
 function processRequest(request, response) {
@@ -82,11 +84,9 @@ function processRequest(request, response) {
         request.on('end', function () {
             var body = qs.parse(bodyString)
                 //console.log("body from qs:", body);
-                //body.ext_content_return_types = body.custom_ext_content_return_types;
 
             provider.valid_request(request, body, function (err, isValid) {
-                ltiContent.init(provider);
-                writeLog("provider:" + JSON.stringify(provider, null, 4));
+                writeLog("provider:", provider);
                 //                console.log("request:", request);
                 //                console.log("response:", response);
 
@@ -106,11 +106,6 @@ function processRequest(request, response) {
     }
 }
 
-var options = {
-    key: fs.readFileSync(__dirname + "/keys/server.key"), // __dirname to find directory
-    cert: fs.readFileSync(__dirname + "/keys/server.crt")
-}
 
-https.createServer(options, processRequest).listen(port) // port dynamic
-console.log(chalk.blue("Server is active on port " + port));
-console.log(chalk.green(getScript(port))); // also diaplay the script tag with data...
+https.createServer(options, processRequest).listen(port)
+console.log(chalk.blue("Server is active at " + url));
