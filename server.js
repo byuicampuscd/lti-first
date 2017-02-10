@@ -14,10 +14,11 @@ var fs = require("fs"),
         cert: fs.readFileSync(__dirname + "/keys/server.crt")
     },
     htmlFiles = require('./htmlFilesToObject.js')(),
+    getReqData = require('./getRequestData.js'),
     creds = JSON.parse(fs.readFileSync("../dev.json", "utf8")),
     provider = new lti.Provider("my_cool_key", "my_cool_secret");
 
-
+console.log("htmlFiles:", Object.keys(htmlFiles));
 /*
     helper function to make a console.log() also write to data.log
 */
@@ -31,7 +32,7 @@ function writeLog() {
     argString += "\n------------------------------------------\n"
 
     fs.appendFile("data.log", argString, function () {});
-    console.log(...arguments);
+    console.log.apply(null, arguments);
 }
 
 function makeErrorHtml(message) {
@@ -39,45 +40,32 @@ function makeErrorHtml(message) {
         .replace(/{{message}}/g, message);
 }
 
-function makeRequestHtml(request, apiScriptName) {
-    return htmlFiles.request
-        //add in the request JSON
-        .replace(/{{request}}/, JSON.stringify(request, null, 4))
-        //add in the apiScriptName
-        .replace(/{{apiScriptName}}/, apiScriptName);
+function makeRequestHtml(html, request) {
+    //add in the request JSON
+    return html.replace(/{{request}}/, JSON.stringify(request, null, 4));
 }
 
-function sendLearnosityBack(res) {
-    // Instantiate the SDK
-    var learnositySdk = new Learnosity();
-    var apiScriptName = 'items';
 
-    var request = learnositySdk.init(
-        apiScriptName, {
+function sendLearnosityBack(res, provider) {
+    // Instantiate the SDK
+    var requestOut, requestData,
+        learnositySdk = new Learnosity(),
+        security = {
             'consumer_key': creds.key,
             'domain': 'localhost',
             'user_id': 'finchd@byui.edu'
-        },
-        creds.secret, {
-            'type': 'local_practice',
-            'state': 'initial',
-            "rendering_type": "assess",
-            "user_id": "finchd@byui.edu",
-            "session_id": Object.keys(provider.nonceStore.used)[0],
-            "items": [
-             "4a54ff38-1d69-4a92-80b5-a12b33bf406c"
-            ],
-            "config": {
-                "subtitle": "By Ben (H)",
-                "navigation": {
-                    "show_intro": true,
-                    "show_itemcount": true
-                }
-            }
-        }
-    );
+        };
 
-    res.end(makeRequestHtml(request, apiScriptName));
+    //get the right data
+    requestData = getReqData(provider.body.resource_link_id,
+        Object.keys(provider.nonceStore.used)[0],
+        htmlFiles);
+
+    //make request with correct data
+    requestOut = learnositySdk.init(requestData.service, security, creds.secret, requestData.request);
+
+    //make and send the html
+    res.end(makeRequestHtml(requestData.html, requestOut));
 }
 
 function processRequest(request, response) {
