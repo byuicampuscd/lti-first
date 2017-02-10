@@ -15,7 +15,7 @@ var fs = require("fs"),
         key: fs.readFileSync(__dirname + "/keys/server.key"),
         cert: fs.readFileSync(__dirname + "/keys/server.crt")
     },
-    requestHtml = fs.readFileSync("./index.html", "utf8"),
+    requestHtml = fs.readFileSync("./request.html", "utf8"),
     creds = JSON.parse(fs.readFileSync("../dev.json", "utf8")),
     provider = new lti.Provider("my_cool_key", "my_cool_secret");
 
@@ -90,10 +90,10 @@ function processRequest(request, response) {
 
         request.on('end', function () {
             var body = qs.parse(bodyString)
-                
+
             provider.valid_request(request, body, function (err, isValid) {
                 writeLog("provider:", provider);
-                
+
                 //check if the lti is valid
                 if (err || !isValid) {
                     console.log(chalk.red("Not valid LTI"));
