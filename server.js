@@ -18,6 +18,7 @@ var fs = require("fs"),
     creds = JSON.parse(fs.readFileSync("../dev.json", "utf8")),
     provider = new lti.Provider("my_cool_key", "my_cool_secret");
 
+var uuidV4 = require('uuid/v4');
 console.log("htmlFiles:", Object.keys(htmlFiles));
 /*
     helper function to make a console.log() also write to data.log
@@ -45,7 +46,6 @@ function makeRequestHtml(html, request) {
     return html.replace(/{{request}}/, JSON.stringify(request, null, 4));
 }
 
-
 function sendLearnosityBack(res, provider) {
     // Instantiate the SDK
     var requestOut, requestData,
@@ -53,13 +53,14 @@ function sendLearnosityBack(res, provider) {
         security = {
             'consumer_key': creds.key,
             'domain': 'localhost',
-            'user_id': 'finchd@byui.edu'
+            'user_id': provider.body.lis_person_contact_email_primary
         };
 
     //get the right data
     requestData = getReqData(provider.body.resource_link_id,
-        Object.keys(provider.nonceStore.used)[0],
-        htmlFiles);
+        uuidV4(),
+        htmlFiles,
+        security.user_id);
 
     //make request with correct data
     requestOut = learnositySdk.init(requestData.service, security, creds.secret, requestData.request);
@@ -101,7 +102,8 @@ function processRequest(request, response) {
         });
     } else {
         //no post
-        response.end(makeErrorHtml("Did not send Post for LTI Launch"));
+        response.end(htmlFiles.default);
+        
     }
 }
 

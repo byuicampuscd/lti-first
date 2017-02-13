@@ -1,7 +1,7 @@
 /* eslint-env node*/
 /* eslint no-console:0*/
 
-module.exports = function getReqData(id, sessionId, htmlFiles) {
+module.exports = function getReqData(id, sessionId, htmlFiles, userId) {
     var reqData1, reqData2, linkMap;
 
     reqData1 = {
@@ -11,7 +11,7 @@ module.exports = function getReqData(id, sessionId, htmlFiles) {
             'type': 'local_practice',
             'state': 'initial',
             "rendering_type": "assess",
-            "user_id": "finchd@byui.edu",
+            "user_id": userId,
             "session_id": sessionId,
             "items": [
              "4a54ff38-1d69-4a92-80b5-a12b33bf406c"
@@ -30,7 +30,7 @@ module.exports = function getReqData(id, sessionId, htmlFiles) {
         html: htmlFiles.author,
         service: 'author',
         request: {
-            "user_id": "finchd@byui.edu",
+            "user_id": userId,
             "session_id": sessionId,
             "mode": "item_list",
             "config": {
