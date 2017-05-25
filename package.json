@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/byuicampuscd/lti-first/issues"
   },
-  "homepage": "https://github.com/byuicampuscd/lti-first#readme"
+  "homepage": "https://github.com/byuicampuscd/lti-first#readme",
   "author": "Joshua McKinney",
   "contributors": [{
     "name": "Ben Harker"
